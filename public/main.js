@@ -41,9 +41,13 @@ var tweet_text_style = {
 //  global game variables
 var score = 0
 var kill_min = Math.pow(10, 2)  //  min squared distance to kill tweet
-var kill_animation_lenght = 75  //  in frames, must be > 2
-var init_text_vel = 30 //  initial velocity for text explosion
-var text_fr = 0.95  //  text explosion friction
+var kill_animation_lenght = 150  //  in frames, must be > 2
+var init_text_vel = 2 //  initial velocity for text explosion
+var text_fr = 0.97  //  text explosion friction
+var pr_fr = 0.95  //  tweet friction
+var pr_ac_mouse = 50  //  run from mouse force
+var pr_ac_center = 0.1  //  run to center force
+var pr_ac_random = 0.05  //  random motion force in % of velocity
 
 //  physics containers
 var pr_nb = 100  //  max tweets simultaneously in game
@@ -53,6 +57,8 @@ var pr = []  //  pixi sprite array
 var pr_on = []
 var pr_px = []
 var pr_py = []
+var pr_vx = []
+var pr_vy = []
 var pr_text = []
 var pr_text_lenght = []
 var pr_text_px = []
@@ -76,6 +82,8 @@ socket.on('stream', function (msg) {  //  execute following code on tweet recive
       pr_on[id] = 1
       pr_px[id] = Math.random() * sx
       pr_py[id] = Math.random() * sy
+      pr_vx[id] = 0
+      pr_vy[id] = 0
       pr_ref = id
       stage.addChild(pr[id])
 
@@ -100,10 +108,48 @@ function animate () {
 
   for (var i = 0; i < pr_nb; i++) {
     if (pr_on[i] === 1) {  //  test if tweet is active
-      //  squared distance between mouse and tweet
-      var mdx = mousePosition.x - pr_px[i]
-      var mdy = mousePosition.y - pr_py[i]
-      var md = mdx * mdx + mdy * mdy
+      //  tweet physics
+      var dx = pr_px[i] - mousePosition.x
+      var dy = pr_py[i] - mousePosition.y
+      var md = dx * dx + dy * dy  //  squared distance between mouse and tweet
+      var d = pr_ac_mouse / md
+      pr_vx[i] += dx * d
+      pr_vy[i] += dy * d
+      dx = sx / 2 - pr_px[i]
+      dy = sy / 2 - pr_py[i]
+      d = pr_ac_center / Math.sqrt(dx * dx + dy * dy)
+      pr_vx[i] += dx * d
+      pr_vy[i] += dy * d
+      var f = Math.random() * Math.PI * 2
+      var r = Math.random() * pr_ac_random
+      pr_vx[i] += r * Math.sin(f)
+      pr_vy[i] += r * Math.cos(f)
+
+      pr_vx[i] *= pr_fr
+      pr_vy[i] *= pr_fr
+      pr_px[i] += pr_vx[i]
+      pr_py[i] += pr_vy[i]
+      if (pr_px[i] < 0) {
+        pr_px[i] = 0
+        pr_vx[i] *= -1
+      }
+      if (pr_px[i] >= sx) {
+        pr_px[i] = sx - 1
+        pr_vx[i] *= -1
+      }
+      if (pr_py[i] < 0) {
+        pr_py[i] = 0
+        pr_vy[i] *= -1
+      }
+      if (pr_py[i] >= sy) {
+        pr_py[i] = sy - 1
+        pr_vy[i] *= -1
+      }
+
+      // update sprites
+      pr[i].position.x = pr_px[i]
+      pr[i].position.y = pr_py[i]
+      pr[i].rotation = Math.atan2(pr_vy[i], pr_vx[i]) + Math.PI * 0.5
 
       //  remove tweet, add score
       if (md <= kill_min) {
@@ -115,17 +161,13 @@ function animate () {
           pr_text_px[text_id] = pr_px[i]
           pr_text_py[text_id] = pr_py[i]
           var fi = Math.random() * Math.PI * 2
-          var rad = Math.random() * init_text_vel
+          var rad = Math.random() * init_text_vel * Math.sqrt(pr_vx[i] * pr_vx[i] + pr_vy[i] * pr_vy[i])
           pr_text_vx[text_id] = rad * Math.sin(fi)
           pr_text_vy[text_id] = rad * Math.cos(fi)
           stage.addChild(pr_text[text_id])
         }
         score += 1
       }
-
-      // update sprites
-      pr[i].position.x = pr_px[i]
-      pr[i].position.y = pr_py[i]
     }
     if (pr_on[i] >= 2) {  //  test for kill animation
       for (var l = 0; l < pr_text_lenght[i]; l++) {
