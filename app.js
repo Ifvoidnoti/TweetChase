@@ -12,7 +12,7 @@ app.get('/', function (req, res) {
   res.sendFile(config.path + 'index.html')
 })
 
-t.track(config.trackListe)
+t.track(config.trackListe)  //  filtering tweets based on config
 
 t.on('tweet', function (tweet) {
   io.emit('stream', tweet.text)  //  emits tweet to client
