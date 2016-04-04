@@ -1,3 +1,13 @@
 {
-	"path" : "/Users/admin/Ifvoidnoti/TweetChase/"
+  "path" : "/Users/admin/Ifvoidnoti/TweetChase/",
+  "tw_auth" : {
+    "consumer_key" :    "cb9B18puNI5ApwnswojW7ptP2",
+    "consumer_secret" : "9ifaRB1x8vNlFF2L2UMM9P3YhDlfbapPL02H2HQ1vCsVGIeMgG",
+    "token" :           "4784054183-41x23JsSL7treSm04OOycp3lTMZJVFng0Bel8T2",
+    "token_secret" :    "L9c5hOQOGvpYFg9tNUjwUJxc9mkC7qWndkdK8ESpZNUYK"
+  },
+  "trackListe" : [
+    "#love",
+    "#twitter"
+  ]
 }
