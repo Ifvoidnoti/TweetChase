@@ -1,0 +1,23 @@
+{
+  "name": "TweetChase",
+  "version": "0.0.1",
+  "description": "Tweet chase game",
+  "homepage": "https://github.com/Ifvoidnoti/TweetChase.git",
+  "author": {
+    "name": "Ifvoidnoti",
+    "url": "https://github.com/Ifvoidnoti"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ifvoidnoti/TweetChase.git"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "node-tweet-stream": "1.10.0",
+    "express": "4.13.4",
+    "socket.io": "1.4.5",
+    "twit": "2.2.3"
+  }
+}
