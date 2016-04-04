@@ -50,7 +50,7 @@ var pr_ac_center = 0.1  //  run to center force
 var pr_ac_random = 0.05  //  random motion force in % of velocity
 
 //  physics containers
-var pr_nb = 100  //  max tweets simultaneously in game
+var pr_nb = 200  //  max tweets simultaneously in game
 var max_pr_text = 140  //  max text lenght per tweet
 var pr_ref = 0  //  id of next sprite to add
 var pr = []  //  pixi sprite array
@@ -124,7 +124,6 @@ function animate () {
       var r = Math.random() * pr_ac_random
       pr_vx[i] += r * Math.sin(f)
       pr_vy[i] += r * Math.cos(f)
-
       pr_vx[i] *= pr_fr
       pr_vy[i] *= pr_fr
       pr_px[i] += pr_vx[i]
@@ -145,7 +144,6 @@ function animate () {
         pr_py[i] = sy - 1
         pr_vy[i] *= -1
       }
-
       // update sprites
       pr[i].position.x = pr_px[i]
       pr[i].position.y = pr_py[i]
@@ -203,6 +201,7 @@ function animate () {
         pr_on[i] = 0
         for (var m = 0; m < pr_text_lenght[i]; m++) {
           stage.removeChild(pr_text[i * max_pr_text + m])
+          pr_text[i * max_pr_text + m].destroy()
         }
       }
     }
