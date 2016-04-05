@@ -22,6 +22,10 @@ window.onresize = function (event) {
 //  texture loads
 var arrow_texture = PIXI.Texture.fromImage('arrow.png')
 
+//  graphics for cursor and tails
+var graphics = new PIXI.Graphics()
+stage.addChild(graphics)
+
 //  setup for score displaying
 var score_style = {
   font: '18px courier new',
@@ -52,6 +56,8 @@ var pr_ac_random = 0.05  //  random motion force in % of velocity
 //  physics containers
 var pr_nb = 200  //  max tweets simultaneously in game
 var max_pr_text = 140  //  max text lenght per tweet
+var pr_tail_nb = 20  //  segmets nb for each tweet
+var pr_tail_length = 3  //  length of each segment
 var pr_ref = 0  //  id of next sprite to add
 var pr = []  //  pixi sprite array
 var pr_on = []
@@ -65,6 +71,8 @@ var pr_text_px = []
 var pr_text_py = []
 var pr_text_vx = []
 var pr_text_vy = []
+var pr_tail_px = []
+var pr_tail_py = []
 //  init containers
 for (var i = 0; i < pr_nb; i++) {
   pr_on[i] = 0
@@ -78,7 +86,7 @@ socket.on('stream', function (msg) {  //  execute following code on tweet recive
   for (var i = 0; i < pr_nb; i++) {
     var id = (i + pr_ref) % pr_nb
     if (pr_on[id] === 0) {
-      // add tweet
+      //  add tweet
       pr_on[id] = 1
       pr_px[id] = Math.random() * sx
       pr_py[id] = Math.random() * sy
@@ -87,7 +95,7 @@ socket.on('stream', function (msg) {  //  execute following code on tweet recive
       pr_ref = id
       stage.addChild(pr[id])
 
-      // add tweet text
+      //  add tweet text
       var max_lenght = max_pr_text
       if (max_lenght > msg.lenght) {
         max_lenght = msg.lenght
@@ -96,22 +104,38 @@ socket.on('stream', function (msg) {  //  execute following code on tweet recive
       for (var j = 0; j < max_lenght; j++) {
         pr_text[id * max_pr_text + j] = new PIXI.Text(msg.charAt(j), tweet_text_style)
       }
+
+      //  setup tail
+      for (var k = 0; k < pr_tail_nb; k++) {
+        var tail_id = id * pr_tail_nb + k
+        pr_tail_px[tail_id] = pr_px[id] + 15.1 * k
+        pr_tail_py[tail_id] = pr_py[id] + 15.1 * k
+      }
       break
     }
   }
 })
 
-// main game loop
+//  main game loop
 animate()
 function animate () {
-  score_text.text = score
+  score_text.text = 'Score : ' + score
+  graphics.clear()
+  graphics.lineStyle(1, 0x000000)
 
+  //  id and min_d for closest tweet to mouse
+  var tw_id = 0
+  var tw_min_d = Math.pow(sx * sy, 2)
   for (var i = 0; i < pr_nb; i++) {
     if (pr_on[i] === 1) {  //  test if tweet is active
       //  tweet physics
       var dx = pr_px[i] - mousePosition.x
       var dy = pr_py[i] - mousePosition.y
       var md = dx * dx + dy * dy  //  squared distance between mouse and tweet
+      if (tw_min_d >= md) {
+        tw_min_d = md
+        tw_id = i
+      }
       var d = pr_ac_mouse / md
       pr_vx[i] += dx * d
       pr_vy[i] += dy * d
@@ -148,6 +172,20 @@ function animate () {
       pr[i].position.x = pr_px[i]
       pr[i].position.y = pr_py[i]
       pr[i].rotation = Math.atan2(pr_vy[i], pr_vx[i]) + Math.PI * 0.5
+
+      //  update and draw tails
+      pr_tail_px[i * pr_tail_nb] = pr_px[i]
+      pr_tail_py[i * pr_tail_nb] = pr_py[i]
+      graphics.moveTo(pr_px[i], pr_py[i])
+      for (var k = 1; k < pr_tail_nb; k++) {
+        var tail_id = i * pr_tail_nb + k
+        var tx = pr_tail_px[tail_id] - pr_tail_px[tail_id - 1]
+        var ty = pr_tail_py[tail_id] - pr_tail_py[tail_id - 1]
+        var td = pr_tail_length / Math.sqrt(tx * tx + ty * ty)
+        pr_tail_px[tail_id] = pr_tail_px[tail_id - 1] + tx * td
+        pr_tail_py[tail_id] = pr_tail_py[tail_id - 1] + ty * td
+        graphics.lineTo(pr_tail_px[tail_id], pr_tail_py[tail_id])
+      }
 
       //  remove tweet, add score
       if (md <= kill_min) {
@@ -206,6 +244,21 @@ function animate () {
       }
     }
   }
+
+  //  draw custom cursor
+  graphics.endFill()
+  graphics.lineStyle(2, 0xff0000)
+  graphics.moveTo(mousePosition.x, mousePosition.y)
+  var hx = pr_px[tw_id] - mousePosition.x
+  var hy = pr_py[tw_id] - mousePosition.y
+  var hd = 20 / Math.sqrt(hx * hx + hy * hy)
+  graphics.lineTo(mousePosition.x + hx * hd, mousePosition.y + hy * hd)
+  graphics.endFill()
+  graphics.lineStyle(0)
+  graphics.beginFill(0xff0000, 1)
+  graphics.drawCircle(mousePosition.x, mousePosition.y, 4)
+  graphics.endFill()
+
   requestAnimationFrame(animate)
   renderer.render(stage)
 }
